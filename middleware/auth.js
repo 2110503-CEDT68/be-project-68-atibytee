@@ -8,7 +8,10 @@ exports.protect = async (req, res, next) => {
   if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
     token = req.headers.authorization.split(' ')[1];
   }
-
+  // check if token is in cookies
+  else if (req.cookies && req.cookies.token) {
+    token = req.cookies.token;
+  }
   // Make sure token exists
   if (!token) {
     return res.status(401).json({ success: false, message: 'Not authorize to access this route' });
