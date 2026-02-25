@@ -1,17 +1,29 @@
 const express = require('express');
-const {getCoworkingSpaces,getCoworkingSpace,createCoworkingSpace,updateCoworkingSpace,deleteCoworkingSpace} = require('../controllers/coworkingspaces');
-const appointmentRouter = require('./reserves')
-const router = express.Router() ;
+const {
+  getCoworkingSpaces,
+  getCoworkingSpace,
+  createCoworkingSpace,
+  updateCoworkingSpace,
+  deleteCoworkingSpace
+} = require('../controllers/coworkingspaces');
 
-const {protect,authorize} = require('../middleware/auth');
+const reserveRouter = require('./reserves');
+const { protect, authorize } = require('../middleware/auth');
 
+const router = express.Router();
 
-// rename
-router.use('/:roomId/reserves/' ,appointmentRouter );
+// ✅ ต้องใช้ coworkingId ให้ตรง controller
+router.use('/:coworkingId/reservations', reserveRouter);
 
-const app = express();
+router
+  .route('/')
+  .get(getCoworkingSpaces)
+  .post(protect, authorize('admin'), createCoworkingSpace);
 
-router.route('/').get(getCoworkingSpaces).post(protect,authorize('admin'), createCoworkingSpace);
-router.route('/:id').get(getCoworkingSpace).put(protect,authorize('admin'), updateCoworkingSpace).delete(protect,authorize('admin'), deleteCoworkingSpace);
+router
+  .route('/:id')
+  .get(getCoworkingSpace)
+  .put(protect, authorize('admin'), updateCoworkingSpace)
+  .delete(protect, authorize('admin'), deleteCoworkingSpace);
 
 module.exports = router;
