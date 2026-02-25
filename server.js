@@ -5,7 +5,7 @@ const express = require('express') ;
 const dotenv = require('dotenv');
 const cookieParser = require('cookie-parser');
 const connectDB = require('./config/db');
-const rooms = require('./routes/coworkingspaces');
+const coworks = require('./routes/coworkingspaces');
 const auth = require('./routes/auth');
 const reserves = require('./routes/reserves');
 
@@ -18,7 +18,7 @@ app.set('query parser' , 'extended') ;
 app.use(express.json());//translate json
 app.use(cookieParser());
 
-app.use('/api/v1/coworkingspaces' , rooms);
+app.use('/api/v1/coworkingspaces' , coworks);
 app.use('/api/v1/auth',auth) ;
 app.use('/api/v1/reservations' , reserves);
 
