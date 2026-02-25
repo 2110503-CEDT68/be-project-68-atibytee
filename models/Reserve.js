@@ -7,24 +7,38 @@ const ReservationSchema = new mongoose.Schema({
     ref: 'User',
     required: true
   },
-  room: {
+  coworkingSpace: {
     type: mongoose.Schema.ObjectId,
-    ref: 'Room',   // <-- รองรับ populate room
+    ref: 'CoworkingSpace',
+    required: true
+  },
+  roomNumber: {
+    type: Number,
     required: true
   },
   date: {
     type: Date,
     required: true
-  },
-  createdAt: {
-    type: Date,
-    default: Date.now
   }
 });
 
-// availability
-ReservationSchema.statics.checkAvailability = async function (roomId, date) {
-  const count = await this.countDocuments({ room: roomId, date });
+// ห้องเดียวกัน วันเดียวกัน ห้ามจองซ้ำ
+ReservationSchema.index(
+  { coworkingSpace: 1, roomNumber: 1, date: 1 },
+  { unique: true }
+);
+
+// check availability (ว่างหรือไม่)
+ReservationSchema.statics.checkAvailability = async function (
+  coworkingId,
+  roomNumber,
+  date
+) {
+  const count = await this.countDocuments({
+    coworkingSpace: coworkingId,
+    roomNumber,
+    date
+  });
   return count === 0;
 };
 

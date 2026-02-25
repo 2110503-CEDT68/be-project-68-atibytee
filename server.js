@@ -5,7 +5,7 @@ const express = require('express') ;
 const dotenv = require('dotenv');
 const cookieParser = require('cookie-parser');
 const connectDB = require('./config/db');
-const rooms = require('./routes/rooms');
+const rooms = require('./routes/coworkingspaces');
 const auth = require('./routes/auth');
 const reserves = require('./routes/reserves');
 
