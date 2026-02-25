@@ -8,8 +8,7 @@ const Room = require('../models/Room');
 exports.getReservations = async (req, res) => {
   try {
     let query;
-
-    if (req.user.role !== 'admin') {
+    if (req.user.role !== 'admin') {// let user see only their reservations
       // user เห็นของตัวเองเท่านั้น
       query = Reservation.find({ user: req.user.id }).populate({
         path: 'room',
@@ -51,10 +50,17 @@ exports.getReservation = async (req, res) => {
       select: 'name coworkingSpace'
     });
 
-    if (!reservation) {
+    if (!reservation) {// cant find reservation
       return res.status(404).json({
         success: false,
         msg: `No reservation with id ${req.params.id}`
+      });
+    }
+    // check if user is owner of reservation or admin
+    if (reservation.user.toString() !== req.user.id && req.user.role !== 'admin') {
+      return res.status(401).json({
+        success: false,
+        message: `User ${req.user.id} is not authorized to view this reservation`
       });
     }
 
@@ -120,6 +126,7 @@ exports.addReservation = async (req, res) => {
 // @access  Private
 exports.updateReservation = async (req, res) => {
   try {
+    
     let reservation = await Reservation.findById(req.params.id);
     if (!reservation) {
       return res.status(404).json({
