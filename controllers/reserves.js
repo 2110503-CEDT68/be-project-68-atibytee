@@ -124,6 +124,13 @@ exports.addReservation = async (req, res) => {
     }
 
     const reservation = await Reservation.create(req.body);
+    //  Find the index of the specific room in the array
+    const roomIndex = coworking.rooms.findIndex(r => r.roomNumber === roomNumber);
+    //Change isAvailable to false and save the building!
+    if (roomIndex !== -1) {
+      coworking.rooms[roomIndex].isAvailable = false;
+      await coworking.save(); // Save the updated coworking space to the database
+    }
 
     res.status(201).json({
       success: true,
