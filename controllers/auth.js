@@ -11,12 +11,11 @@ exports.register = async (req, res, next) => {
             name,
             telephone,
             email,
-            password
+            password,
+            role:'user'
     
         });
 
-        // const token=user.getSignedJwtToken();
-        // res.status(200).json({ success: true,token });
         sendTokenResponse(user,200,res);
     } catch(err){
         res.status(400).json({success:false}) ; 
@@ -25,28 +24,27 @@ exports.register = async (req, res, next) => {
 };
 
 exports.login = async(req,res,next) => {
-    const {email , password} = req.body ; 
+    try{
+        const {email , password} = req.body ; 
 
-    if(!email || !password){
-        return res.status(400).json({success:false , msg:'please provide an email and password'});
+        if(!email || !password){
+            return res.status(400).json({success:false , msg:'please provide an email and password'});
+        }
+
+        const user = await User.findOne({email}).select('+password') ; 
+        if(!user){
+            return res.status(400).json({success:false , msg:'invalid credentials'});
+        }
+
+        const isMatch = await user.matchPassword(password) ; 
+        if(!isMatch){
+            return res.status(400).json({success:false , msg:'invalid credentials'});
+        }
+        sendTokenResponse(user,200,res);
+    }catch(err){
+        res.status(400).json({success:false}) ; 
+        console.log(err.stack);
     }
-
-    const user = await User.findOne({email}).select('+password') ; 
-    if(!user){
-        return res.status(400).json({success:false , msg:'invalid credentials'});
-    }
-
-    const isMatch = await user.matchPassword(password) ; 
-    if(!isMatch){
-        return res.status(400).json({success:false , msg:'invalid credentials'});
-    }
-
-    // const token = user.getSignedJwtToken();
-
-    // res.status(200).json({success:true , token})  ;
-    sendTokenResponse(user,200,res);
-
-    
 }
 
 const sendTokenResponse=(user,statusCode,res)=>{
@@ -66,13 +64,18 @@ const sendTokenResponse=(user,statusCode,res)=>{
         })
     }
 
-exports.getMe = async(req,res,next)=>{
-    const user = await User.findById(req.user.id);
-    res.status(200).json({
-        success:true,
-        data:user
-    })
-}
+exports.getMe = async (req, res, next) => {
+    try {
+        const user = await User.findById(req.user.id);
+        res.status(200).json({
+            success: true,
+            data: user
+        });
+    } catch (err) {
+        res.status(400).json({ success: false });
+        console.log(err.stack);
+    }
+};
 
 // @desc    Log user out / clear cookie
 // @route   GET /api/v1/auth/logout
