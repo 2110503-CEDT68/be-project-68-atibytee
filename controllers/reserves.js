@@ -151,6 +151,13 @@ exports.addReservation = async (req, res) => {
 exports.updateReservation = async (req, res) => {
   try {
     let reservation = await Reservation.findById(req.params.id);
+    // user must not change roomNumber and coworkingSpace, if want to change must delete and create new reservation
+    if ((req.body.roomNumber || req.body.coworkingSpace) && req.user.role !== 'admin') {
+      return res.status(400).json({
+        success: false,
+        message: 'You cannot change the room number or coworking space. Please delete this reservation and create a new one.'
+      });
+    }
 
     if (!reservation) {
       return res.status(404).json({
