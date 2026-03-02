@@ -46,7 +46,7 @@ exports.getCoworkingSpaces = async (req, res) => {
       data: coworkings
     });
   } catch (err) {
-    res.status(400).json({ success: false });
+    res.status(400).json({ success: false , message: err.message});
   }
 };
 
@@ -65,7 +65,7 @@ exports.getCoworkingSpace = async (req, res) => {
       data: coworking
     });
   } catch (err) {
-    res.status(400).json({ success: false });
+    res.status(400).json({ success: false , message: err.message});
   }
 };
 
@@ -80,7 +80,7 @@ exports.createCoworkingSpace = async (req, res) => {
       data: coworking
     });
   } catch (err) {
-    res.status(400).json({ success: false });
+    res.status(400).json({ success: false , message: err.message});
   }
 };
 
@@ -96,7 +96,7 @@ exports.updateCoworkingSpace = async (req, res) => {
     );
 
     if (!coworking) {
-      return res.status(404).json({ success: false });
+      return res.status(404).json({ success: false, message: 'Coworking space not found' });
     }
 
     res.status(200).json({

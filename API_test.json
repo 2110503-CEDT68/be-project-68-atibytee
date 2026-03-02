@@ -1,0 +1,97 @@
+{
+	"info": {
+		"name": "Coworking Space API - Full Test Suite",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "1. Authentication",
+			"item": [
+				{
+					"name": "1. Register User",
+					"event": [{"listen": "test","script": {"exec": ["pm.test(\"Status is 200/201\", function(){pm.expect(pm.response.code).to.be.oneOf([200,201]);});"],"type": "text/javascript"}}],
+					"request": {"method": "POST","header": [],"body": {"mode": "raw","raw": "{\"name\": \"Student Test\",\"telephone\": \"0812345678\",\"email\": \"student@test.com\",\"password\": \"123456\",\"role\": \"user\"}","options": {"raw": {"language": "json"}}},"url": {"raw": "{{URL}}/api/v1/auth/register","host": ["{{URL}}"],"path": ["api","v1","auth","register"]}}
+				},
+				{
+					"name": "2. Login (Auto-Save Token)",
+					"event": [{"listen": "test","script": {"exec": ["pm.test(\"Status is 200\", function(){pm.response.to.have.status(200);});","var jsonData = pm.response.json(); pm.collectionVariables.set(\"TOKEN\", jsonData.token);"],"type": "text/javascript"}}],
+					"request": {"method": "POST","header": [],"body": {"mode": "raw","raw": "{\"email\": \"student@test.com\",\"password\": \"123456\"}","options": {"raw": {"language": "json"}}},"url": {"raw": "{{URL}}/api/v1/auth/login","host": ["{{URL}}"],"path": ["api","v1","auth","login"]}}
+				},
+				{
+					"name": "3. Get Me",
+					"request": {"auth": {"type": "bearer","bearer": [{"key": "token","value": "{{TOKEN}}","type": "string"}]},"method": "GET","header": [],"url": {"raw": "{{URL}}/api/v1/auth/me","host": ["{{URL}}"],"path": ["api","v1","auth","me"]}}
+				},
+				{
+					"name": "4. Logout",
+					"request": {"auth": {"type": "bearer","bearer": [{"key": "token","value": "{{TOKEN}}","type": "string"}]},"method": "GET","header": [],"url": {"raw": "{{URL}}/api/v1/auth/logout","host": ["{{URL}}"],"path": ["api","v1","auth","logout"]}}
+				}
+			]
+		},
+		{
+			"name": "2. Coworking Spaces",
+			"item": [
+				{
+					"name": "5. Get All Spaces (Auto-Save ID)",
+					"event": [{"listen": "test","script": {"exec": ["pm.test(\"Status is 200\", function(){pm.response.to.have.status(200);});","var jsonData = pm.response.json(); if(jsonData.data.length > 0) pm.collectionVariables.set(\"SPACE_ID\", jsonData.data[0]._id);"],"type": "text/javascript"}}],
+					"request": {"method": "GET","header": [],"url": {"raw": "{{URL}}/api/v1/coworkingspaces","host": ["{{URL}}"],"path": ["api","v1","coworkingspaces"]}}
+				},
+				{
+					"name": "6. Get Single Space",
+					"request": {"method": "GET","header": [],"url": {"raw": "{{URL}}/api/v1/coworkingspaces/{{SPACE_ID}}","host": ["{{URL}}"],"path": ["api","v1","coworkingspaces","{{SPACE_ID}}"]}}
+				},
+				{
+					"name": "7. Create Space (Admin)",
+					"request": {"auth": {"type": "bearer","bearer": [{"key": "token","value": "{{TOKEN}}","type": "string"}]},"method": "POST","header": [],"body": {"mode": "raw","raw": "{\"name\": \"Admin Space\",\"address\": \"123 Rd\",\"tel\": \"000\",\"openTime\": \"08:00\",\"closeTime\": \"22:00\",\"rooms\": [{\"roomNumber\": 1}, {\"roomNumber\": 2}]}","options": {"raw": {"language": "json"}}},"url": {"raw": "{{URL}}/api/v1/coworkingspaces","host": ["{{URL}}"],"path": ["api","v1","coworkingspaces"]}}
+				}
+			]
+		},
+		{
+			"name": "3. Reservations",
+			"item": [
+				{
+					"name": "8. Create Reservation (Auto-Save ID)",
+					"event": [{"listen": "test","script": {"exec": ["pm.test(\"Status is 200/201\", function(){pm.expect(pm.response.code).to.be.oneOf([200,201]);});","var jsonData = pm.response.json(); if(jsonData.data) pm.collectionVariables.set(\"RESERVATION_ID\", jsonData.data._id);"],"type": "text/javascript"}}],
+					"request": {"auth": {"type": "bearer","bearer": [{"key": "token","value": "{{TOKEN}}","type": "string"}]},"method": "POST","header": [],"body": {"mode": "raw","raw": "{\"date\": \"2026-03-10T10:00:00.000Z\",\"roomNumber\": 1}","options": {"raw": {"language": "json"}}},"url": {"raw": "{{URL}}/api/v1/coworkingspaces/{{SPACE_ID}}/reservations","host": ["{{URL}}"],"path": ["api","v1","coworkingspaces","{{SPACE_ID}}","reservations"]}}
+				},
+				{
+					"name": "9. Limit Check (Exceed 3 Rooms)",
+					"event": [{"listen": "test","script": {"exec": ["pm.test(\"Blocked: Status 400\", function(){pm.response.to.have.status(400);});"],"type": "text/javascript"}}],
+					"request": {"auth": {"type": "bearer","bearer": [{"key": "token","value": "{{TOKEN}}","type": "string"}]},"method": "POST","header": [],"body": {"mode": "raw","raw": "{\"date\": \"2026-03-11T10:00:00.000Z\",\"roomNumber\": 2}","options": {"raw": {"language": "json"}}},"url": {"raw": "{{URL}}/api/v1/coworkingspaces/{{SPACE_ID}}/reservations","host": ["{{URL}}"],"path": ["api","v1","coworkingspaces","{{SPACE_ID}}","reservations"]}}
+				},
+				{
+					"name": "10. Get Own Reservations",
+					"request": {"auth": {"type": "bearer","bearer": [{"key": "token","value": "{{TOKEN}}","type": "string"}]},"method": "GET","header": [],"url": {"raw": "{{URL}}/api/v1/reservations","host": ["{{URL}}"],"path": ["api","v1","reservations"]}}
+				},
+				{
+					"name": "11. Update Own Reservation",
+					"request": {"auth": {"type": "bearer","bearer": [{"key": "token","value": "{{TOKEN}}","type": "string"}]},"method": "PUT","header": [],"body": {"mode": "raw","raw": "{\"date\": \"2026-03-15T10:00:00.000Z\"}","options": {"raw": {"language": "json"}}},"url": {"raw": "{{URL}}/api/v1/reservations/{{RESERVATION_ID}}","host": ["{{URL}}"],"path": ["api","v1","reservations","{{RESERVATION_ID}}"]}}
+				},
+				{
+					"name": "12. Delete Own Reservation",
+					"request": {"auth": {"type": "bearer","bearer": [{"key": "token","value": "{{TOKEN}}","type": "string"}]},"method": "DELETE","header": [],"url": {"raw": "{{URL}}/api/v1/reservations/{{RESERVATION_ID}}","host": ["{{URL}}"],"path": ["api","v1","reservations","{{RESERVATION_ID}}"]}}
+				}
+			]
+		},
+		{
+			"name": "4. Extra Credit (Logic)",
+			"item": [
+				{
+					"name": "13. Create Space - 11 Rooms (Fail 400)",
+					"event": [{"listen": "test","script": {"exec": ["pm.test(\"Blocked 11 Rooms: Status 400\", function(){pm.response.to.have.status(400);});"],"type": "text/javascript"}}],
+					"request": {"auth": {"type": "bearer","bearer": [{"key": "token","value": "{{TOKEN}}","type": "string"}]},"method": "POST","header": [],"body": {"mode": "raw","raw": "{\"name\": \"Overload\",\"address\": \"Fail St\",\"tel\": \"00\",\"openTime\": \"08:00\",\"closeTime\": \"22:00\",\"rooms\": [{\"roomNumber\":1},{\"roomNumber\":2},{\"roomNumber\":3},{\"roomNumber\":4},{\"roomNumber\":5},{\"roomNumber\":6},{\"roomNumber\":7},{\"roomNumber\":8},{\"roomNumber\":9},{\"roomNumber\":10},{\"roomNumber\":11}]}","options": {"raw": {"language": "json"}}},"url": {"raw": "{{URL}}/api/v1/coworkingspaces","host": ["{{URL}}"],"path": ["api","v1","coworkingspaces"]}}
+				},
+				{
+					"name": "14. Double Booking (Fail 400)",
+					"event": [{"listen": "test","script": {"exec": ["pm.test(\"Blocked Double Booking: Status 400\", function(){pm.response.to.have.status(400);});"],"type": "text/javascript"}}],
+					"request": {"auth": {"type": "bearer","bearer": [{"key": "token","value": "{{TOKEN}}","type": "string"}]},"method": "POST","header": [],"body": {"mode": "raw","raw": "{\"date\": \"2026-03-10T10:00:00.000Z\",\"roomNumber\": 1}","options": {"raw": {"language": "json"}}},"url": {"raw": "{{URL}}/api/v1/coworkingspaces/{{SPACE_ID}}/reservations","host": ["{{URL}}"],"path": ["api","v1","coworkingspaces","{{SPACE_ID}}","reservations"]}}
+				}
+			]
+		}
+	],
+	"variable": [
+		{"key": "URL","value": "http://localhost:5000","type": "string"},
+		{"key": "TOKEN","value": "","type": "string"},
+		{"key": "SPACE_ID","value": "","type": "string"},
+		{"key": "RESERVATION_ID","value": "","type": "string"}
+	]
+}
