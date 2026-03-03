@@ -6,10 +6,6 @@ const RoomSubSchema = new mongoose.Schema(
     roomNumber: {
       type: Number,
       required: true
-    },
-    isAvailable: {
-      type: Boolean,
-      default: true
     }
   },
   { _id: false }
