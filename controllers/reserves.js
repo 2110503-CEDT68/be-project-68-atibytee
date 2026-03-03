@@ -134,6 +134,7 @@ exports.addReservation = async (req, res) => {
       const msg = Object.values(err.errors).map(e => e.message);
       return res.status(400).json({ success: false, msg });
     }
+    console.log(err);
     res.status(500).json({
       success: false,
       msg: 'Cannot add reservation'

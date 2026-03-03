@@ -8,7 +8,7 @@ exports.getCoworkingSpaces = async (req, res) => {
   try {
     let query;
     const reqQuery = { ...req.query };
-    const removeFields = ['select', 'sort', 'page', 'limit'];
+    const removeFields = ['select', 'sort', 'page', 'limit', 'date'];
     removeFields.forEach(p => delete reqQuery[p]);
 
     let queryStr = JSON.stringify(reqQuery);
@@ -26,27 +26,38 @@ exports.getCoworkingSpaces = async (req, res) => {
       query = query.sort('-createdAt');
     }
 
+    /* ✅ populate room → reservations */
+    const populateOptions = {
+      path: 'rooms.reservations',
+      select: 'date'
+    };
+
+    if (req.query.date) {
+      const targetDate = new Date(req.query.date);
+      targetDate.setHours(0, 0, 0, 0);
+
+      populateOptions.match = {
+        date: targetDate
+      };
+    }
+
+    query = query.populate(populateOptions);
+
     const page = parseInt(req.query.page, 10) || 1;
     const limit = parseInt(req.query.limit, 10) || 25;
     const startIndex = (page - 1) * limit;
-    const endIndex = page * limit;
     const total = await CoworkingSpace.countDocuments();
 
     query = query.skip(startIndex).limit(limit);
     const coworkings = await query;
 
-    const pagination = {};
-    if (endIndex < total) pagination.next = { page: page + 1, limit };
-    if (startIndex > 0) pagination.prev = { page: page - 1, limit };
-
     res.status(200).json({
       success: true,
       count: coworkings.length,
-      pagination,
       data: coworkings
     });
   } catch (err) {
-    res.status(400).json({ success: false , message: err.message});
+    res.status(400).json({ success: false, message: err.message });
   }
 };
 
@@ -55,7 +66,27 @@ exports.getCoworkingSpaces = async (req, res) => {
 // @access  Private
 exports.getCoworkingSpace = async (req, res) => {
   try {
-    const coworking = await CoworkingSpace.findById(req.params.id);
+    const { date } = req.query; // yyyy-mm-dd
+
+    let populateOptions = {
+      path: 'rooms.reservations',
+      select: 'date user'
+    };
+
+    // ถ้าส่ง date มา → filter เฉพาะวันนั้น
+    if (date) {
+      const targetDate = new Date(date);
+      targetDate.setHours(0, 0, 0, 0);
+
+      populateOptions.match = {
+        coworkingSpace: req.params.id,
+        date: targetDate
+      };
+    }
+
+    const coworking = await CoworkingSpace.findById(req.params.id)
+      .populate(populateOptions);
+
     if (!coworking) {
       return res.status(404).json({ success: false });
     }
@@ -65,7 +96,7 @@ exports.getCoworkingSpace = async (req, res) => {
       data: coworking
     });
   } catch (err) {
-    res.status(400).json({ success: false , message: err.message});
+    res.status(400).json({ success: false, message: err.message });
   }
 };
 
