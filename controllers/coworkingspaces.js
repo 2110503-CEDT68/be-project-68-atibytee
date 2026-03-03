@@ -7,6 +7,7 @@ const Reservation = require('../models/Reserve');
 exports.getCoworkingSpaces = async (req, res) => {
   try {
     let query;
+
     const reqQuery = { ...req.query };
     const removeFields = ['select', 'sort', 'page', 'limit'];
     removeFields.forEach(p => delete reqQuery[p]);
@@ -26,17 +27,38 @@ exports.getCoworkingSpaces = async (req, res) => {
       query = query.sort('-createdAt');
     }
 
+    // ✅ pagination (เหมือนตอนแรก)
     const page = parseInt(req.query.page, 10) || 1;
     const limit = parseInt(req.query.limit, 10) || 25;
     const startIndex = (page - 1) * limit;
+    const endIndex = page * limit;
+    const total = await CoworkingSpace.countDocuments(JSON.parse(queryStr));
 
     query = query.skip(startIndex).limit(limit);
 
     const coworkings = await query;
 
+    // ✅ pagination result
+    const pagination = {};
+
+    if (endIndex < total) {
+      pagination.next = {
+        page: page + 1,
+        limit
+      };
+    }
+
+    if (startIndex > 0) {
+      pagination.prev = {
+        page: page - 1,
+        limit
+      };
+    }
+
     res.status(200).json({
       success: true,
       count: coworkings.length,
+      pagination,
       data: coworkings
     });
   } catch (err) {
