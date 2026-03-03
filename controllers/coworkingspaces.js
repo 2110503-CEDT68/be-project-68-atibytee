@@ -1,6 +1,38 @@
 const CoworkingSpace = require('../models/CoworkingSpace');
 const Reservation = require('../models/Reserve');
 
+// 🛠️ Helper function to generate population options
+const getPopulateOptions = (dateString) => {
+  let populateOptions = {
+    path: 'rooms.reservations',
+    select: 'date user',
+    transform: (doc) => {
+      if (!doc) return doc;
+      const reservation = doc.toJSON();
+      if (reservation.date) {
+        reservation.date = reservation.date.toISOString().split('T')[0];
+      }
+      return reservation;
+    }
+  };
+
+  // If a date is provided, add the 24-hour filter
+  if (dateString) {
+    const targetDate = new Date(dateString);
+    const startOfDay = new Date(targetDate.setUTCHours(0, 0, 0, 0));
+    const endOfDay = new Date(targetDate.setUTCHours(23, 59, 59, 999));
+
+    populateOptions.match = {
+      date: {
+        $gte: startOfDay,
+        $lte: endOfDay
+      }
+    };
+  }
+
+  return populateOptions;
+};
+
 // @desc    Get all coworking spaces
 // @route   GET /api/v1/coworkings
 // @access  Private
@@ -9,7 +41,7 @@ exports.getCoworkingSpaces = async (req, res) => {
     let query;
 
     const reqQuery = { ...req.query };
-    const removeFields = ['select', 'sort', 'page', 'limit'];
+    const removeFields = ['select', 'sort', 'page', 'limit', 'date']; // Added 'date' to removeFields
     removeFields.forEach(p => delete reqQuery[p]);
 
     let queryStr = JSON.stringify(reqQuery);
@@ -27,7 +59,10 @@ exports.getCoworkingSpaces = async (req, res) => {
       query = query.sort('-createdAt');
     }
 
-    // ✅ pagination (เหมือนตอนแรก)
+    // ✅ Use the helper function here!
+    const populateOptions = getPopulateOptions(req.query.date);
+    query = query.populate(populateOptions);
+
     const page = parseInt(req.query.page, 10) || 1;
     const limit = parseInt(req.query.limit, 10) || 25;
     const startIndex = (page - 1) * limit;
@@ -38,7 +73,6 @@ exports.getCoworkingSpaces = async (req, res) => {
 
     const coworkings = await query;
 
-    // ✅ pagination result
     const pagination = {};
 
     if (endIndex < total) {
@@ -71,29 +105,23 @@ exports.getCoworkingSpaces = async (req, res) => {
 // @access  Private
 exports.getCoworkingSpace = async (req, res) => {
   try {
-    const { date } = req.query; // yyyy-mm-dd
+    const { date } = req.query;
 
-    let populateOptions = {
-      path: 'rooms.reservations',
-      select: 'date user'
-    };
+    // ✅ Use the helper function here too!
+    let populateOptions = getPopulateOptions(date);
 
-    // ถ้าส่ง date มา → filter เฉพาะวันนั้น
-    if (date) {
-      const targetDate = new Date(date);
-      targetDate.setHours(0, 0, 0, 0);
-
-      populateOptions.match = {
-        coworkingSpace: req.params.id,
-        date: targetDate
-      };
+    // For a single space, we also want to match the specific coworking ID
+    if (populateOptions.match) {
+        populateOptions.match.coworkingSpace = req.params.id;
+    } else {
+        populateOptions.match = { coworkingSpace: req.params.id };
     }
 
     const coworking = await CoworkingSpace.findById(req.params.id)
       .populate(populateOptions);
 
     if (!coworking) {
-      return res.status(404).json({ success: false });
+      return res.status(404).json({ success: false, message: 'Coworking space not found' });
     }
 
     res.status(200).json({
@@ -166,6 +194,6 @@ exports.deleteCoworkingSpace = async (req, res) => {
       data: {}
     });
   } catch (err) {
-    res.status(400).json({ success: false });
+    res.status(400).json({ success: false, message: err.message });
   }
 };

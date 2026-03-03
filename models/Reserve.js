@@ -1,62 +1,45 @@
+// models/Reservation.js
 const mongoose = require('mongoose');
 
-const ReservationSchema = new mongoose.Schema(
-  {
-    user: {
-      type: mongoose.Schema.ObjectId,
-      ref: 'User',
-      required: true
-    },
-    coworkingSpace: {
-      type: mongoose.Schema.ObjectId,
-      ref: 'CoworkingSpace',
-      required: true
-    },
-    roomNumber: {
-      type: Number,
-      required: true
-    },
-    date: {
-      type: Date,
-      required: true
-    }
+const ReservationSchema = new mongoose.Schema({
+  user: {
+    type: mongoose.Schema.ObjectId,
+    ref: 'User',
+    required: true
   },
-  {
-    timestamps: true
+  coworkingSpace: {
+    type: mongoose.Schema.ObjectId,
+    ref: 'CoworkingSpace',
+    required: true
+  },
+  roomNumber: {
+    type: Number,
+    required: true
+  },
+  date: {
+    type: Date,
+    required: true
   }
-);
+});
 
-/* ❗ สำคัญ: index นี้คือสิ่งที่ทำให้
-   - ห้องเดียวกัน
-   - วันเดียวกัน
-   - จองซ้ำไม่ได้ */
+// ห้องเดียวกัน วันเดียวกัน ห้ามจองซ้ำ
 ReservationSchema.index(
   { coworkingSpace: 1, roomNumber: 1, date: 1 },
   { unique: true }
 );
 
-/* ✅ normalize date ให้เป็นต้นวันเสมอ
-   เพื่อให้ populate / query ตรงกัน */
-ReservationSchema.pre('save', async function () {
-  this.date.setHours(0, 0, 0, 0);
-});
-
-/* check availability (รายวัน) */
+// check availability (ว่างหรือไม่)
 ReservationSchema.statics.checkAvailability = async function (
-  coworkingSpaceId,
+  coworkingId,
   roomNumber,
-  requestedDate
+  date
 ) {
-  const targetDate = new Date(requestedDate);
-  targetDate.setHours(0, 0, 0, 0);
-
-  const existingBooking = await this.findOne({
-    coworkingSpace: coworkingSpaceId,
+  const count = await this.countDocuments({
+    coworkingSpace: coworkingId,
     roomNumber,
-    date: targetDate
+    date
   });
-
-  return !existingBooking;
+  return count === 0;
 };
 
 module.exports = mongoose.model('Reservation', ReservationSchema);
