@@ -1,14 +1,14 @@
 const CoworkingSpace = require('../models/CoworkingSpace');
 const Reservation = require('../models/Reserve');
 
-// 🛠️ Helper function to generate population options
 const getPopulateOptions = (dateString) => {
   let populateOptions = {
     path: 'rooms.reservations',
-    select: 'date user',
+    select: 'date',
     transform: (doc) => {
       if (!doc) return doc;
       const reservation = doc.toJSON();
+      // ลบข้อความ "populateOptions.match.coworkingSpace" ที่หลุดมาตรงนี้ออก
       if (reservation.date) {
         reservation.date = reservation.date.toISOString().split('T')[0];
       }
@@ -16,7 +16,6 @@ const getPopulateOptions = (dateString) => {
     }
   };
 
-  // If a date is provided, add the 24-hour filter
   if (dateString) {
     const targetDate = new Date(dateString);
     const startOfDay = new Date(targetDate.setUTCHours(0, 0, 0, 0));
@@ -107,15 +106,13 @@ exports.getCoworkingSpace = async (req, res) => {
   try {
     const { date } = req.query;
 
-    // ✅ Use the helper function here too!
     let populateOptions = getPopulateOptions(date);
 
-    // For a single space, we also want to match the specific coworking ID
-    if (populateOptions.match) {
-        populateOptions.match.coworkingSpace = req.params.id;
-    } else {
-        populateOptions.match = { coworkingSpace: req.params.id };
+    // ✅ แก้ไข: ตรวจสอบก่อนว่า match มีค่าหรือยัง ถ้าไม่มีให้สร้างเป็น {} ก่อน
+    if (!populateOptions.match) {
+      populateOptions.match = {};
     }
+    populateOptions.match.coworkingSpace = req.params.id;
 
     const coworking = await CoworkingSpace.findById(req.params.id)
       .populate(populateOptions);
