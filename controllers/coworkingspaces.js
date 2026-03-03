@@ -8,7 +8,6 @@ const getPopulateOptions = (dateString) => {
     transform: (doc) => {
       if (!doc) return doc;
       const reservation = doc.toJSON();
-      // ลบข้อความ "populateOptions.match.coworkingSpace" ที่หลุดมาตรงนี้ออก
       if (reservation.date) {
         reservation.date = reservation.date.toISOString().split('T')[0];
       }
