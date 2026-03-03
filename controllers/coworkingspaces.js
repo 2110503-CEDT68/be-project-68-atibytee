@@ -8,7 +8,7 @@ exports.getCoworkingSpaces = async (req, res) => {
   try {
     let query;
     const reqQuery = { ...req.query };
-    const removeFields = ['select', 'sort', 'page', 'limit', 'date'];
+    const removeFields = ['select', 'sort', 'page', 'limit'];
     removeFields.forEach(p => delete reqQuery[p]);
 
     let queryStr = JSON.stringify(reqQuery);
@@ -26,29 +26,12 @@ exports.getCoworkingSpaces = async (req, res) => {
       query = query.sort('-createdAt');
     }
 
-    /* ✅ populate room → reservations */
-    const populateOptions = {
-      path: 'rooms.reservations',
-      select: 'date'
-    };
-
-    if (req.query.date) {
-      const targetDate = new Date(req.query.date);
-      targetDate.setHours(0, 0, 0, 0);
-
-      populateOptions.match = {
-        date: targetDate
-      };
-    }
-
-    query = query.populate(populateOptions);
-
     const page = parseInt(req.query.page, 10) || 1;
     const limit = parseInt(req.query.limit, 10) || 25;
     const startIndex = (page - 1) * limit;
-    const total = await CoworkingSpace.countDocuments();
 
     query = query.skip(startIndex).limit(limit);
+
     const coworkings = await query;
 
     res.status(200).json({
